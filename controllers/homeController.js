@@ -1,3 +1,3 @@
 export const getHome = (req, res) => {
-  res.send("Hello from Home Controller!");
+  res.send("HTTP GET request to the home page");
 };
