@@ -5,19 +5,34 @@ import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import { Server } from "socket.io";
+import mongoose from "mongoose";
 
 import homeRoutes from "./routes/home.js";
+import userRoutes from "./routes/user.js";
 import logger from "./middleware/logger.js";
 import errorHandler from "./middleware/errorHandler.js";
 
+dotenv.config();
+
 const app = express();
 const server = http.createServer(app);
-dotenv.config();
+
+// Connect mongoose to MongoDB
+mongoose.connect(process.env.MONGODB_URI);
+
+mongoose.connection.on("connected", () => {
+  console.log("✅ Mongoose connected to MongoDB");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
+});
 
 app.use(cors());
 app.use(express.json()); // for JSON body parsing
 app.use(logger); // custom logger
 app.use("/", homeRoutes); // routes
+app.use("/user", userRoutes); // user routes
 app.use(errorHandler); // error handler
 
 if (process.env.NODE_ENV === "dev") {
@@ -84,3 +99,16 @@ if (process.env.NODE_ENV === "dev") {
     console.log(`🔐 HTTPS Server running at https://ws.chat-system.space`);
   });
 }
+
+// Global error handlers for unhandled promise rejections and uncaught exceptions
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  // Recommended: send to error tracking service, then exit
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception thrown:", err);
+  // Recommended: send to error tracking service, then exit
+  process.exit(1);
+});
