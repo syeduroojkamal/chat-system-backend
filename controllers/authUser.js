@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { verifyToken } from "@clerk/backend";
 
 export default async function authUser({ token, userId }) {

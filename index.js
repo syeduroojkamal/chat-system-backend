@@ -3,12 +3,15 @@ import https from "https";
 import http from "http";
 
 import express from "express";
+import dotenv from "dotenv";
 import cors from "cors";
 import { Server } from "socket.io";
 
 import errorHandler from "./middleware/errorHandler.js";
 import setupSocketHandlers from "./ws.js";
 import connectDB from "./db/mongo.js";
+
+dotenv.config();
 
 const app = express();
 
