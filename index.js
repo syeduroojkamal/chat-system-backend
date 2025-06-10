@@ -1,68 +1,51 @@
-import express from "express";
 import fs from "fs";
 import https from "https";
 import http from "http";
-import dotenv from "dotenv";
+
+import express from "express";
 import cors from "cors";
 import { Server } from "socket.io";
-import mongoose from "mongoose";
 
-import homeRoutes from "./routes/home.js";
-import userRoutes from "./routes/user.js";
-import logger from "./middleware/logger.js";
 import errorHandler from "./middleware/errorHandler.js";
-
-dotenv.config();
+import setupSocketHandlers from "./ws.js";
+import connectDB from "./db/mongo.js";
 
 const app = express();
-const server = http.createServer(app);
 
-// Connect mongoose to MongoDB
-mongoose.connect(process.env.MONGODB_URI);
+await connectDB();
 
-mongoose.connection.on("connected", () => {
-  console.log("✅ Mongoose connected to MongoDB");
+const corsOptions = {
+  origin: "*",
+  methods: ["GET"],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+
+app.use("/", (req, res) => {
+  res.redirect("https://chat-system.space/");
 });
 
-mongoose.connection.on("error", (err) => {
-  console.error("❌ Mongoose connection error:", err);
-});
+app.use(errorHandler);
 
-app.use(cors());
-app.use(express.json()); // for JSON body parsing
-app.use(logger); // custom logger
-app.use("/", homeRoutes); // routes
-app.use("/user", userRoutes); // user routes
-app.use(errorHandler); // error handler
+const requiredEnv = ["NODE_ENV", "MONGODB_URI", "CLERK_SECRET_KEY"];
+for (const variable of requiredEnv) {
+  if (!process.env[variable]) {
+    console.error(`Missing required environment variable: ${variable}`);
+    process.exit(1);
+  }
+}
 
 if (process.env.NODE_ENV === "dev") {
-  const io = new Server(server, {
-    cors: {
-      origin: "http://localhost:3000",
-      methods: ["GET"],
-    },
-  });
+  const httpServer = http.createServer(app);
+  const io = new Server(httpServer, { cors: corsOptions });
 
-  io.on("connection", (socket) => {
-    console.log("on | connection id = ", socket.id);
+  setupSocketHandlers(io);
 
-    socket.broadcast.emit("alert", socket.id);
-    console.log("emit | socket.id = ", socket.id);
-
-    socket.on("client-server-message", (message) => {
-      io.emit("server-client-message", message);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("on | disconnect id = ", socket.id);
-    });
-  });
-
-  server.listen(3001, () => {
-    console.log(`🌐 Dev server running at http://localhost:3001`);
+  httpServer.listen(3001, () => {
+    console.log(`HTTP Dev server running at localhost:3001`);
   });
 } else {
-  // SSL certificate paths (from certbot)
   const sslOptions = {
     key: fs.readFileSync(
       "/etc/letsencrypt/live/ws.chat-system.space/privkey.pem"
@@ -73,30 +56,12 @@ if (process.env.NODE_ENV === "dev") {
   };
 
   const httpsServer = https.createServer(sslOptions, app);
-  const io = new Server(httpsServer, {
-    cors: {
-      origin: "*",
-      methods: ["GET"],
-    },
-  });
+  const io = new Server(httpsServer, { cors: corsOptions });
 
-  io.on("connection", (socket) => {
-    console.log("on | connection id = ", socket.id);
-
-    socket.broadcast.emit("alert", socket.id);
-    console.log("emit | socket.id = ", socket.id);
-
-    socket.on("client-server-message", (message) => {
-      io.emit("server-client-message", message);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("on | disconnect id = ", socket.id);
-    });
-  });
+  setupSocketHandlers(io);
 
   httpsServer.listen(443, () => {
-    console.log(`🔐 HTTPS Server running at https://ws.chat-system.space`);
+    console.log(`HTTPS Prod Server running at ws.chat-system.space`);
   });
 }
 

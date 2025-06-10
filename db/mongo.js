@@ -1,21 +1,17 @@
-import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-dotenv.config();
+import mongoose from "mongoose";
 
-const client = new MongoClient(process.env.MONGODB_URI);
-
-let db;
-
-export async function connectDB() {
-  if (!db) {
-    await client.connect();
-    db = client.db();
-    console.log("✅ MongoDB connected (shared instance)");
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("✅ Mongoose connected to MongoDB");
+  } catch (err) {
+    console.error("❌ Mongoose connection error:", err);
+    process.exit(1);
   }
-  return db;
-}
+};
 
-export function getDB() {
-  if (!db) throw new Error("DB not connected. Call connectDB() first.");
-  return db;
-}
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
+});
+
+export default connectDB;
