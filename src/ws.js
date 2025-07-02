@@ -9,8 +9,13 @@ const onlineUsers = new Map();
 export default function setupSocketHandlers(io) {
   io.on("connection", (socket) => {
     socket.on("initUser", async (userData, callback) => {
+      if (onlineUsers.has(userData.userId)) return;
       onlineUsers.set(userData.userId, socket.id);
-      console.log(`Connected: userId=${userData.userId} socketId=${socket.id}`);
+      console.log("==================== Connected ====================");
+      console.log(`fullName: ${userData.fullName}`);
+      console.log(`userId: ${userData.userId}`);
+      console.log(`socket.id: ${socket.id}`);
+      console.log("===================================================");
       socket.userId = userData.userId; // Store userId on the socket for easy removal
       callback(await initUser(userData));
     });
@@ -42,7 +47,10 @@ export default function setupSocketHandlers(io) {
 
     socket.on("disconnect", () => {
       if (socket.userId) onlineUsers.delete(socket.userId);
-      console.log(`Disconnected: userId=${socket.userId}`);
+      console.log("=================== Disconnected ==================");
+      console.log(`userId: ${socket.userId}`);
+      console.log(`socket.id: ${socket.id}`);
+      console.log("===================================================");
     });
   });
 }
