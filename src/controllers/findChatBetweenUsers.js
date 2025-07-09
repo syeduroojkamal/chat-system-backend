@@ -2,6 +2,11 @@ import messageModel from "../models/messageModel.js";
 
 export default async function fetchMessages(userA, userB) {
   try {
+    await messageModel.updateMany(
+      { senderId: userB.userId, receiverId: userA.userId, read: false },
+      { $set: { read: true } }
+    );
+
     const messages = await messageModel
       .find({
         $or: [

@@ -25,17 +25,29 @@ export default function setupSocketHandlers(io) {
     );
 
     socket.on("userToServerMessage", async (message, callback) => {
-      const response = await userToServerMessage(message);
       const receiverSocketId = onlineUsers.get(message.receiverId);
-      if (receiverSocketId && io.sockets.sockets.get(receiverSocketId)) {
+      const isOnline =
+        receiverSocketId && io.sockets.sockets.get(receiverSocketId);
+      let response;
+      if (isOnline) {
+        message.read = true;
+        response = await userToServerMessage(message);
         io.to(receiverSocketId).emit("serverToUserMessage", response);
+      } else {
+        response = await userToServerMessage(message);
       }
+
       callback(response);
     });
 
-    socket.on("fetchMessages", async (userA, userB, callback) =>
-      callback(await fetchMessages(userA, userB))
-    );
+    socket.on("fetchMessages", async (userA, userB, callback) => {
+      const SenderSocketId = onlineUsers.get(userB.userId);
+      const isOnline = SenderSocketId && io.sockets.sockets.get(SenderSocketId);
+      if (isOnline) {
+        io.to(SenderSocketId).emit("markMessageReceived");
+      }
+      callback(await fetchMessages(userA, userB));
+    });
 
     socket.on("authUser", (token, userId, callback) =>
       callback(authUser(token, userId))
