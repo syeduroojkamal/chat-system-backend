@@ -8,7 +8,6 @@ export default async function userToServerMessage({
   receiverId,
   roomId,
   timestamp,
-  delivered,
   read,
 }) {
   if (!message || !senderId || !senderName) {
@@ -24,7 +23,6 @@ export default async function userToServerMessage({
       senderName,
       receiverId,
       roomId,
-      delivered,
       read,
     });
 

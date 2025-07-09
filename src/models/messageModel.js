@@ -12,7 +12,6 @@ const messageSchema = new mongoose.Schema({
   receiverId: { type: String, default: null }, // null in case message is on a group
   roomId: { type: String, default: null },
   timestamp: { type: Date, default: Date.now },
-  delivered: { type: Boolean, default: false },
   read: { type: Boolean, default: false },
 });
 
