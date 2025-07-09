@@ -16,6 +16,8 @@ export default async function initUser({
 
   const existingUser = await User.findOne({ userId });
   if (existingUser) {
+    existingUser.lastSignIn = new Date();
+    existingUser.save();
     return {
       success: true,
       message: "User found",
