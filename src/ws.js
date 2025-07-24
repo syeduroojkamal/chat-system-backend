@@ -1,8 +1,12 @@
 import initUser from "./controllers/initUser.js";
+import refetchUser from "./controllers/refetchUser.js";
 import authUser from "./controllers/authUser.js";
 import userToServerMessage from "./controllers/userToServerMessage.js";
 import fetchAllUsers from "./controllers/fetchAllUsers.js";
 import fetchMessages from "./controllers/findChatBetweenUsers.js";
+import addFriends from "./controllers/addFriends.js";
+import fetchFriendsDetails from "./controllers/fetchFriendsDetails.js";
+import unfriend from "./controllers/unfriend.js";
 
 const onlineUsers = new Map();
 
@@ -18,6 +22,10 @@ export default function setupSocketHandlers(io) {
       console.log("===================================================");
       socket.userId = userData.userId; // Store userId on the socket for easy removal
       callback(await initUser(userData));
+    });
+
+    socket.on("refetchUser", async (userId, callback) => {
+      callback(await refetchUser(userId));
     });
 
     socket.on("fetchAllUsers", async (userData, callback) =>
@@ -56,6 +64,19 @@ export default function setupSocketHandlers(io) {
     socket.on("onlineIndicator", (userId, callback) =>
       callback(onlineIndicator(userId))
     );
+
+    socket.on("fetchFriendsDetails", async (friendIdArr, callback) => {
+      callback(await fetchFriendsDetails(friendIdArr));
+    });
+
+    socket.on("addFriends", async (userIds, callback) => {
+      const myUserId = socket.userId;
+      callback(await addFriends(myUserId, userIds));
+    });
+
+    socket.on("unfriend", async (myUserId, friendId, callback) => {
+      callback(await unfriend(myUserId, friendId));
+    });
 
     socket.on("disconnect", () => {
       if (socket.userId) onlineUsers.delete(socket.userId);

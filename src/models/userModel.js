@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   accountCreated: { type: Date, required: true },
   lastSignIn: { type: Date, required: true },
+  friends: [{ type: String }],
 });
 
 const User = mongoose.model("User", userSchema);

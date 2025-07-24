@@ -17,7 +17,6 @@ export default async function initUser({
   const existingUser = await User.findOne({ userId });
   if (existingUser) {
     existingUser.lastSignIn = new Date();
-    existingUser.save();
     return {
       success: true,
       message: "User found",
@@ -32,6 +31,7 @@ export default async function initUser({
       email,
       accountCreated: new Date(accountCreated),
       lastSignIn: new Date(lastSignIn),
+      friends: [],
     });
 
     const result = await user.save();
